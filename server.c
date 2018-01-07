@@ -7,37 +7,40 @@
 #include "protocol.h"
 #include "rb_tree.h"
 
-void handleQuery(int *rc, int *s1, struct protocol *query, Tree *T){
+void handleQuery(int *rc, int *s1, struct protocol *query, Tree *T) {
     *rc = recv(*s1, (void*)query, sizeof(struct protocol), 0);
     struct protocol response = {-1, -1, -1};
 
-    if (*rc < 0){
+    if (*rc < 0) {
         perror("ошибка вызова recv");
         exit(1);
     } 
     else {
-        if (query->operation == 1){
-            insert(T, query->key);
+        if (query->operation == 1) { //insert
+            insert(T, query->key, query->value); //NEED TO MODIFY
             response.operation = 10;
         }
-        else if (query->operation == 2){
+        else if (query->operation == 2) { //erase
             erase(T, query->key);
             response.operation = 10;
         }
-        else if (query->operation == 3){
+        else if (query->operation == 3) { //contains
             response.operation = 10;
             response.key = contains(T, T->root, query->key);
+        }
+        else if (query->operation == 4) { //getValue
+            response.operation = 10;
+            response.key = getValue(T, T->root, query->key);
         }
     }
 
     *rc = send(*s1, (void*)&response, sizeof(struct protocol), 0);
-    if (*rc <= 0){
+    if (*rc <= 0) {
         perror("ошибка вызова send");
     }    
 }
 
-int main(void)
-{
+int main(void) {
     struct sockaddr_in local;
     int s;
     int s1;
@@ -48,24 +51,24 @@ int main(void)
     local.sin_addr.s_addr = htonl(INADDR_ANY);
 
     s = socket(AF_INET, SOCK_STREAM, 0);
-    if (s < 0){
+    if (s < 0) {
         perror("ошибка вызова socket");
         exit(1);
     }
 
     rc = bind(s, (struct sockaddr *)&local, sizeof(local));
-    if (rc < 0){
+    if (rc < 0) {
         perror("ошибка вызова bind");
         exit(1);
     }
 
-    if (rc = listen(s, 5)){
+    if (rc = listen(s, 5)) {
         perror("ошибка вызова listen");
         exit(1);
     }
     
     s1 = accept(s, NULL, NULL);
-    if (s1 < 0){
+    if (s1 < 0) {
         perror("ошибка вызова accept");
         exit(1);
     }
@@ -77,24 +80,22 @@ int main(void)
     //getting number of operations;
     rc = recv(s1, (void*)&n, sizeof(n), 0);
 
-    if (rc <= 0){
+    if (rc <= 0) {
         printf("Failed\n");
         exit(1);
     }
-    else{
+    else {
         printf("%d\n", n);
     }
 
     rc = send(s1, "0", 1, 0);
-    if (rc <= 0){
+    if (rc <= 0) {
         perror("ошибка вызова send");
     }  
 
-    Tree *tr = (Tree*)malloc(sizeof(Tree));
-    tr->nil = makeNewNode(tr, 0);
-    tr->root = tr->nil;
+    Tree *tr = createTree();
 
-    for (int i = 0; i < n; i++){
+    for (int i = 0; i < n; i++) {
         struct protocol query;
         handleQuery(&rc, &s1, &query, tr);
     }

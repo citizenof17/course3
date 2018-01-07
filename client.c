@@ -4,26 +4,13 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <time.h>
 #include "protocol.h"
+#include "operations.h"
 
-void query(int *s, int *rc, struct protocol *prot, struct protocol *response){
-    *rc = send(*s, (void*)prot, sizeof(struct protocol), 0);
+int main(void) {
+    srand(time(NULL));
 
-    if (*rc <= 0){
-        perror("ошибка вызова send");
-        exit(1);
-    }
-
-    *rc = recv(*s, (void*)response, sizeof(struct protocol), 0);
-
-    if (*rc <= 0){
-        perror("ошибка вызова recv");
-        exit(1);
-    }
-}
-
-int main(void)
-{
     struct sockaddr_in peer;
     int s;
     int rc;
@@ -35,26 +22,28 @@ int main(void)
 
     s = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (s < 0){
+    if (s < 0) {
         perror("ошибка вызова socket");
         exit(1);
     }
 
     rc = connect(s, (struct sockaddr *)&peer, sizeof(peer));
-    if (rc){
+    if (rc) {
         perror("ошибка вызова connect");
         exit(1);
     }
 
-    int n = 6;
-    rc = send(s, (void*)&n, sizeof(int), 0);
-    if (rc <= 0){
+    int n = 10;
+    scanf("%d", &n);
+
+    rc = send(s, (void *)&n, sizeof(int), 0);
+    if (rc <= 0) {
         perror("ошибка вызова send");
         exit(1);
     }
-    
+
     rc = recv(s, buf, 1, 0);
-    if (rc <= 0){
+    if (rc <= 0) {
         perror("ошибка вызова recv");
         exit(1);
     }
@@ -64,69 +53,32 @@ int main(void)
     printf("Sending %d operations\n", n);
 
     //insert
-    struct protocol prot = {1, 1, 100};
-    struct protocol response = {-1, -1, -1};
 
-    for (int i = 1; i <= 3; i++){
-        prot.key = i;
-        prot.value = i + 100;
-        query(&s, &rc, &prot, &response);
-
-        if (response.operation == 10){
-            printf("Succes\n");
-        }
-        else{
-            printf("Fail\n");
-        }
-    }
-
-    //erase
-    prot.operation = 2;
-    prot.key = 1;
-
-    query(&s, &rc, &prot, &response);
+    int keys[]   = {1, 2, 3, 10, 15, -5, 5, 5, 5};
+    int values[] = {1, 2, 3, 10, 15, 100, 5, 6, 7};
     
-    if (response.operation == 10){
-        printf("Erasing\n");
-    }
-    else{
-        printf("Fail\n");
+    int k = sizeof(keys) / sizeof(int);
+
+    for (int i = 0; i < k; i++) {
+        printf("Inserting key %d with value %d\n", keys[i], values[i]);
+        tryInsert(&s, &rc, keys[i], values[i]);
     }
 
-    //contains
-    prot.operation = 3;
-    prot.key = 2;
+    printf("Contains 10? %d\n", tryContains(&s, &rc, 10).second);
+    printf("Contains 15? %d\n", tryContains(&s, &rc, 15).second);
+    printf("Contains 0? %d\n",  tryContains(&s, &rc, 0) .second);
+    printf("Contains -4? %d\n", tryContains(&s, &rc, -4).second);
 
-    query(&s, &rc, &prot, &response);
-    if (response.operation == 10){
-        printf("Succes: ");
-        if (response.key == 1){
-            printf("Contains\n");
-        }
-        else{
-            printf("Not contains\n");
-        }
-    }
-    else{
-        printf("Fail\n");
-    }
+    printf("Contains 3? %d\n", tryContains(&s, &rc, 3).second);
+    printf("Erasing 3 -> %d\n", tryErase(&s, &rc, 3));
+    printf("Contains 3? %d\n", tryContains(&s, &rc, 3).second);
 
-    prot.key = 1;
+    printf("Value of 2 -> %d\n", tryGetValue(&s, &rc, 2).second);
+    printf("Value of -5 -> %d\n", tryGetValue(&s, &rc, -5).second);
+    printf("Value of -4 -> %d\n", tryGetValue(&s, &rc, -4).second);
 
-    query(&s, &rc, &prot, &response);
-        if (response.operation == 10){
-        printf("Succes: ");
-        if (response.key == 1){
-            printf("Contains\n");
-        }
-        else{
-            printf("Not contains\n");
-        }
-    }
-    else{
-        printf("Fail\n");
-    }
-
+    printf("Contains -4? %d\n", tryContains(&s, &rc, -4).second);
+    
     close(s);
     exit(0);
 }
