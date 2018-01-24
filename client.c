@@ -59,7 +59,8 @@ int main(void) {
     
     int k = sizeof(keys) / sizeof(int);
 
-    for (int i = 0; i < k; i++) {
+    int i;
+    for (i = 0; i < k; i++) {
         printf("Inserting key %d with value %d\n", keys[i], values[i]);
         tryInsert(&s, &rc, keys[i], values[i]);
     }
