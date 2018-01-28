@@ -26,11 +26,12 @@ void insertFixup(Tree *T, Node *z);
 void insert(Tree *T, int key, int value);  //rb-insert
 void transplant(Tree *T, Node *u, Node *v); //delete u, place v
 void deleteFixup(Tree *T, Node *x);
-void erase(Tree *T, int val);
+void erase(Tree *T, int key);
 void clearTree(Tree *T, Node *t);
+void deleteTree(Tree *T);
 void printTree(Node *q, long n);
 int  contains(Tree *T, Node* x, int k);
-int  getValue(Tree *T, Node* x, int k);
+int  getValue(Tree *T, int k);
 
 
   // gcc -std=c99 rb_tree.c -lm

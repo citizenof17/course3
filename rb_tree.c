@@ -259,8 +259,8 @@ void deleteFixup(Tree *T, Node *x) {
   x->color = 'b';
 }
 
-void erase(Tree *T, int val) {
-  Node *z = treeSearch(T, T->root, val);
+void erase(Tree *T, int key) {
+  Node *z = treeSearch(T, T->root, key);
   Node *x = NULL;   //this node will replace y
 
   if (z != T->nil) {
@@ -312,6 +312,10 @@ void clearTree(Tree *T, Node *t) {
   free(t);
 }
 
+void deleteTree(Tree *T){
+  clearTree(T, T->root);
+}
+
 void printTree(Node *q, long n) { ////auxiliary function for testing
    long i;
    if (q) {
@@ -329,8 +333,8 @@ int contains(Tree *T, Node *x, int k) {  //x is a root of the subtree
   return t != T->nil;
 }
 
-int getValue(Tree *T, Node *x, int key) {
-  Node* t = treeSearch(T, x, key);
+int getValue(Tree *T, int key) {
+  Node* t = treeSearch(T, T->root, key);
   if (t == T->nil) {
     insert(T, key, 0);
   }

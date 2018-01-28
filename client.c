@@ -8,45 +8,41 @@
 #include "protocol.h"
 #include "operations.h"
 
-int main(void) {
-    srand(time(NULL));
+#define DEFAULT_PORT (7500)
 
+int run_client(){
     struct sockaddr_in peer;
-    int s;
+    int sock;
     int rc;
     char buf[1];
 
     peer.sin_family = AF_INET;
-    peer.sin_port = htons(7500);
+    peer.sin_port = htons(DEFAULT_PORT);
     peer.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    s = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (s < 0) {
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("ошибка вызова socket");
-        exit(1);
+        return (EXIT_FAILURE);
     }
-
-    rc = connect(s, (struct sockaddr *)&peer, sizeof(peer));
-    if (rc) {
+    
+    if ((rc = connect(sock, (struct sockaddr *)&peer, sizeof(peer))) > 0) {
         perror("ошибка вызова connect");
-        exit(1);
+        return (EXIT_FAILURE);        
     }
 
-    int n = 10;
-    scanf("%d", &n);
+    int n = rand() % 100;
+    n = 4;
 
-    rc = send(s, (void *)&n, sizeof(int), 0);
-    if (rc <= 0) {
+    if ((rc = send(sock, &n, sizeof(n), 0)) <= 0) {
         perror("ошибка вызова send");
-        exit(1);
+        return (EXIT_FAILURE);
     }
 
-    rc = recv(s, buf, 1, 0);
-    if (rc <= 0) {
+    if ((rc = recv(sock, buf, 1, 0)) <= 0) {
         perror("ошибка вызова recv");
-        exit(1);
+        return (EXIT_FAILURE);
     }
+    puts("Received");
 
     //////////////////////
 
@@ -54,32 +50,36 @@ int main(void) {
 
     //insert
 
-    int keys[]   = {1, 2, 3, 10, 15, -5, 5, 5, 5};
-    int values[] = {1, 2, 3, 10, 15, 100, 5, 6, 7};
+    int keys[]   = {1, 2, 3, 10};
+    int values[] = {1, 2, 3, 10};
     
     int k = sizeof(keys) / sizeof(int);
+    protocol_t response;
 
-    int i;
+    int i, res;
     for (i = 0; i < k; i++) {
         printf("Inserting key %d with value %d\n", keys[i], values[i]);
-        tryInsert(&s, &rc, keys[i], values[i]);
+        res = op_set(&sock, &rc, keys[i], values[i], &response);
+        if (res != 0){
+            printf("Operation Error");
+            return (EXIT_FAILURE);
+        }
+        printf("%d\n", response.operation);
     }
 
-    printf("Contains 10? %d\n", tryContains(&s, &rc, 10).second);
-    printf("Contains 15? %d\n", tryContains(&s, &rc, 15).second);
-    printf("Contains 0? %d\n",  tryContains(&s, &rc, 0) .second);
-    printf("Contains -4? %d\n", tryContains(&s, &rc, -4).second);
+    close(sock);
+    return (EXIT_SUCCESS);
+}
 
-    printf("Contains 3? %d\n", tryContains(&s, &rc, 3).second);
-    printf("Erasing 3 -> %d\n", tryErase(&s, &rc, 3));
-    printf("Contains 3? %d\n", tryContains(&s, &rc, 3).second);
+int main(void) {
+    srand(time(NULL));
 
-    printf("Value of 2 -> %d\n", tryGetValue(&s, &rc, 2).second);
-    printf("Value of -5 -> %d\n", tryGetValue(&s, &rc, -5).second);
-    printf("Value of -4 -> %d\n", tryGetValue(&s, &rc, -4).second);
+    int rv = run_client();
 
-    printf("Contains -4? %d\n", tryContains(&s, &rc, -4).second);
-    
-    close(s);
-    exit(0);
+    if (rv != 0){
+        printf("Failed");
+        return (EXIT_FAILURE);
+    }
+
+    return (EXIT_SUCCESS);
 }
