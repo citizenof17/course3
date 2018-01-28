@@ -37,30 +37,45 @@ typedef struct client_params_t {
     pthread_mutex_t mutex;
 } client_params_t;
 
+typedef struct tree_map_t {
+    map_t map;
+    void * root;
+} tree_map_t;
+
+typedef struct hash_map_t {
+    map_t map;
+    void * table;
+    int size;
+} hash_map_t;
+
+tree_map_t * tree_map_init () {
+
+}
+
 int handle_query(int *rc, int *sock, Tree *T) {
     protocol_t query;
     protocol_t response;
     *rc = recv(*sock, &query, sizeof(query), 0);
+    response = query;
 
     if (*rc < 0) {
         perror("ошибка вызова recv");
         return (EXIT_FAILURE);
     } 
     else {
-        switch (query.operation)
-        {
-        case OP_ERASE:
-            erase(T, query.key);
-            response.operation = SUCCESS;
-            break;
-        case OP_SET:
-            insert(T, query.key, query.value);
-            response.operation = SUCCESS;          
-            break;
-        case OP_GET:
-            response.value = getValue(T, query.key);
-            response.operation = SUCCESS;
-            break;
+        switch (query.operation) {
+            case OP_ERASE:
+                erase(T, query.key);
+                response.operation = SUCCESS;
+                break;
+            case OP_SET:
+                insert(T, query.key, query.value);
+                response.operation = SUCCESS;          
+                break;
+            case OP_GET:
+                response.value = getValue(T, query.key);
+                response.operation = SUCCESS;
+                break;
         }
     }
 
@@ -100,24 +115,11 @@ void * client_handler (void * arg) {
         handle_query(&rc, &client_params.fd, tree);
     }
 
-    // printTree(tree->root, 3);
+    printTree(tree->root, 3);
 }
 
 
-typedef struct tree_map_t {
-    map_t map;
-    void * root;
-} tree_map_t;
 
-typedef struct hash_map_t {
-    map_t map;
-    void * table;
-    int size;
-} hash_map_t;
-
-tree_map_t * tree_map_init () {
-
-}
 
 int run_server(config_t *config) {
     struct sockaddr_in local;
@@ -179,11 +181,11 @@ map_t map_init(){
     return map;
 }
 
-int parse_config(config_t  *config, int argc, char *argv){
+int parse_config(config_t *config, int argc, char **argv){
     return 0;
 }
 
-int main (int argc, char * argv) {
+int main (int argc, char * argv[]) {
     tree_map_t tree_map;
     tree_map.map = map_init ();
 
