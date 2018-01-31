@@ -18,6 +18,16 @@ typedef struct client_params_t{
     int id;
 } client_params_t;
 
+char *gen_str(){
+    int size = 5;
+    char *res = malloc(sizeof(char) * size + 1);
+    for(int i = 0; i < size; i++){
+        res[i] = (char)(rand() % 26 + 'a');
+    }
+    res[size] = '\0';
+    return res;
+}
+
 void * run_client(void * arg){
     client_params_t client_params = *(client_params_t *)arg;
 
@@ -41,13 +51,12 @@ void * run_client(void * arg){
     }
     printf("Connected %d\n", client_params.id);
 
-    int n = rand() % 100;
+    int n = rand() % 10;
 
     if ((rc = send(sock, &n, sizeof(n), 0)) <= 0) {
         perror("ошибка вызова send");
         return (EXIT_FAILURE);
     }
-
 
     if ((rc = recv(sock, buf, 1, 0)) <= 0) {
         perror("ошибка вызова recv");
@@ -63,10 +72,10 @@ void * run_client(void * arg){
 
     int i, res;
     for (i = 0; i < n; i++) {
-        int key = rand() % 500;
-        int value = rand() % 100;
+        char *key = gen_str();
+        char *value = gen_str();
         int oper = rand() % 3;
-
+        
         switch(oper) {
             case 0:
                 res = op_erase(&sock, &rc, key, &response);
@@ -79,12 +88,16 @@ void * run_client(void * arg){
                 break;
         }
 
+        printf("ID: %d -> oper: %d, resp_op: %d, key: %s, value: %s, sended key: %s, value %s\n", 
+            client_params.id, oper, response.operation, response.key, response.value, key, value);
+        
+        free(key);
+        free(value);
+        
         if (res != 0){
             printf("Operation Error");
             return (EXIT_FAILURE);
         }
-        printf("ID: %d -> oper: %d, resp: %d, key: %d, value: %d\n", 
-            client_params.id, oper, response.operation, response.key, response.value);
     }
 
     close(sock);

@@ -1,35 +1,42 @@
 #include "rb_tree.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 Tree* createTree() {
   Tree *tr = (Tree*)malloc(sizeof(Tree));
-  tr->nil = makeNewNode(tr, 0, 0);
+  tr->nil = makeNewNode(tr, "nil", "nil");
   tr->root = tr->nil;
   return tr;
 }
 
-Node* makeNewNode(Tree *T, int key, int value) {
+Node* makeNewNode(Tree *T, char *key, char *value) {
   Node* nd = (Node*)malloc(sizeof(Node));
   nd->left = nd->right = T->nil;
   nd->p = T->nil;
-  nd->key = key;
-  nd->value = value;
+  nd->key = (char*)malloc(strlen(key) + 1);
+  nd->value = (char*)malloc(strlen(value) + 1);
+  strcpy(nd->key, key);
+  strcpy(nd->value, value);
+  
+  // nd->key = key;
+  // nd->value = value;
   nd->color = 'b';    //added
 
   return nd;
 }
 
-Node* treeSearch(Tree *T, Node *x, int k) {  //x is a root of the subtree
-  if (x == T->nil || k == x->key) {
+Node* treeSearch(Tree *T, Node *x, char *key) {  //x is a root of the subtree
+  if (x == T->nil || strcmp(key, x->key) == 0) {
     return x;
   }
 
-  if (k < x->key) {
-    return treeSearch(T, x->left, k);  //find in the left child
+  // if (k < x->key) {
+  if (strcmp(key, x->key) < 0){
+    return treeSearch(T, x->left, key);  //find in the left child
   }
   else {
-    return treeSearch(T, x->right, k);  //find in the right child
+    return treeSearch(T, x->right, key);  //find in the right child
   }
 }
 
@@ -139,21 +146,24 @@ void insertFixup(Tree *T, Node *z) {
   T->root->color = 'b';
 }
 
-void insert(Tree *T, int key, int value) {  //rb-insert changes value if key exists
+void insert(Tree *T, char *key, char *value) {  //rb-insert changes value if key exists
   Node *y = T->nil;
   Node *x = T->root;
   Node *z = makeNewNode(T, key, value);
 
   while (x != T->nil) { //looking for new place
     y = x;
-    if (z->key < x->key){
+    // if (z->key < x->key){
+    int cmp = strcmp(z->key, x->key);
+    if (cmp < 0){
       x = x->left;
     }
-    else if (z->key > x->key) {
+    else if (cmp > 0) {
       x = x->right;
     }
     else { //z->key == x->key -- change x->value
-      x->value = z->value;
+      free(x->value);
+      x->value = z->value; //?????
       return;
     }
   }
@@ -164,7 +174,8 @@ void insert(Tree *T, int key, int value) {  //rb-insert changes value if key exi
     T->root = z;  //z is root
   }
   else {
-    if (z->key < y->key){  //is z left or right son?
+    // if (z->key < y->key){  //is z left or right son?
+    if (strcmp(z->key, y->key) < 0){
       y->left = z;
     }
     else {
@@ -259,7 +270,7 @@ void deleteFixup(Tree *T, Node *x) {
   x->color = 'b';
 }
 
-void erase(Tree *T, int key) {
+void erase(Tree *T, char *key) {
   Node *z = treeSearch(T, T->root, key);
   Node *x = NULL;   //this node will replace y
 
@@ -298,6 +309,8 @@ void erase(Tree *T, int key) {
       deleteFixup(T, x);
     }
 
+    free(z->key);
+    free(z->value);    
     free(z);
   }
 }
@@ -309,6 +322,8 @@ void clearTree(Tree *T, Node *t) {
 
   clearTree(T, t->left);
   clearTree(T, t->right);
+  free(t->key);
+  free(t->value);  
   free(t);
 }
 
@@ -323,23 +338,41 @@ void printTree(Node *q, long n) { ////auxiliary function for testing
       for (i = 0; i < n; i++) {
         printf(" ");
       }
-      printf("%d %d %c\n", q->key, q->value, q->color);
+      printf("%s %s %c\n", q->key, q->value, q->color);
       printTree(q->left, n+5);
    }
 }
 
-int contains(Tree *T, Node *x, int k) {  //x is a root of the subtree
-  Node* t = treeSearch(T, x, k);
+int contains(Tree *T, Node *x, char *key) {  //x is a root of the subtree
+  Node* t = treeSearch(T, x, key);
   return t != T->nil;
 }
 
-int getValue(Tree *T, int key) {
+int getValue(Tree *T, char *key, char *value) { //return null if not exists?
   Node* t = treeSearch(T, T->root, key);
-  if (t == T->nil) {
-    insert(T, key, 0);
-  }
-  return t->value;
+  strcpy(value, t->value);
+  // if (t == T->nil) {
+  //   *value = NULL;
+  // }
+  return 0;
 }
+
+// int main(void){
+//   Tree *tree = createTree();
+
+//   // insert(tree, "hi", "hello");
+
+//   char key_buf[100];
+//   char value_buf[100];
+  
+//   scanf("%s %s", key_buf, value_buf);
+
+//   printf("%s %s\n", key_buf, value_buf);
+
+//   // insert(tree, key_buf, value_buf);
+
+//   printTree(tree->root, 3);
+// }
 
 // int main(void)
 // {

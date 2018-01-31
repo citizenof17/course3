@@ -1,5 +1,8 @@
 #pragma once
 
+#define KEY_SIZE 250
+#define VALUE_SIZE 500
+
 typedef enum {
     OP_ERASE,
     OP_SET,
@@ -10,14 +13,6 @@ typedef enum {
 
 typedef struct protocol_t {
     operation_t operation;
-    int key;
-    int value;
-    // char key[KEY_SIZE];
-    // char value[VALUE_SIZE];
+    char key[KEY_SIZE];
+    char value[VALUE_SIZE];
 } protocol_t;
-
-
-//operations:
-//1 - insert, 2 - erase, 3 - contains, 4 - find
-//10 for answer - successu
-//11 for answer - fail

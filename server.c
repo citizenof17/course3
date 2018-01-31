@@ -6,13 +6,14 @@
 #include <inttypes.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
 #include "protocol.h"
 #include "rb_tree.h"
 
 #define DEFAULT_PORT (7500)
 #define MAX_CLIENTS (1010)
-#define KEY_SIZE (16)
-#define VALUE_SIZE (16)
+// #define KEY_SIZE (16)
+// #define VALUE_SIZE (16)
 
 Tree *tree;
 
@@ -58,6 +59,7 @@ int handle_query(int *rc, int *sock, Tree *T) {
     *rc = recv(*sock, &query, sizeof(query), 0);
     response = query;
 
+    printf("key: %s, value: %s\n", query.key, query.value);
     if (*rc < 0) {
         perror("ошибка вызова recv");
         return (EXIT_FAILURE);
@@ -73,7 +75,9 @@ int handle_query(int *rc, int *sock, Tree *T) {
                 response.operation = SUCCESS;          
                 break;
             case OP_GET:
-                response.value = getValue(T, query.key);
+                puts("here1\n");
+                getValue(T, query.key, response.value);
+                puts("here2\n");
                 response.operation = SUCCESS;
                 break;
         }
@@ -115,11 +119,9 @@ void * client_handler (void * arg) {
         handle_query(&rc, &client_params.fd, tree);
     }
 
+    puts("Printing\n");
     printTree(tree->root, 3);
 }
-
-
-
 
 int run_server(config_t *config) {
     struct sockaddr_in local;
@@ -176,8 +178,9 @@ int run_server(config_t *config) {
 
 map_t map_init(){
     tree = createTree();
+
     map_t map;
-    map.tree = createTree();
+    // map.tree = createTree();
     return map;
 }
 
