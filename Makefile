@@ -1,12 +1,16 @@
 all: server client
-server: rb_tree.o server.o 
-	gcc -o server rb_tree.o server.o -pthread 
-client: rb_tree.o client.o operations.o 
-	gcc -o client rb_tree.o client.o operations.o -pthread
+server: tree_map.o rb_tree.o server.o 
+	gcc -o server rb_tree.o tree_map.o server.o -pthread 
+client: client.o operations.o 
+	gcc -o client client.o operations.o -pthread
 rb_tree.o: rb_tree.c
 server.o: server.c
 client.o: client.c
 operations.o: operations.c
+tree_map.o: tree_map.c
+
+clear:
+	rm -v *.o
 
 # clear:
 # 	${RM} *.o

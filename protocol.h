@@ -2,6 +2,9 @@
 
 #define KEY_SIZE 250
 #define VALUE_SIZE 500
+#define ANSWER_SIZE 15
+
+#define protocol_t command_t
 
 typedef enum {
     OP_ERASE,
@@ -11,8 +14,13 @@ typedef enum {
     FAIL,
 } operation_t;
 
-typedef struct protocol_t {
+typedef struct command_t {
     operation_t operation;
     char key[KEY_SIZE];
     char value[VALUE_SIZE];
-} protocol_t;
+} command_t;
+
+typedef struct response_t {
+    char answer[ANSWER_SIZE];
+    char value[VALUE_SIZE];
+} response_t;

@@ -1,8 +1,8 @@
 #include <string.h>
 #include "operations.h"
 
-int query(int *s, int *rc, protocol_t *protocol, protocol_t *response) {
-    if ((*rc = send(*s, protocol, sizeof(*protocol), 0)) <= 0) {
+int query(int *s, int *rc, command_t *command, response_t *response) {
+    if ((*rc = send(*s, command, sizeof(*command), 0)) <= 0) {
         perror("ошибка вызова send");
         return (EXIT_FAILURE);
     }
@@ -15,24 +15,21 @@ int query(int *s, int *rc, protocol_t *protocol, protocol_t *response) {
     return (EXIT_SUCCESS);
 }
 
-int op_erase(int *sock, int *rc, char *key, protocol_t *response) {
-    protocol_t protocol = {OP_ERASE, "", ""};
-    strcpy(protocol.key, key);
-    response->operation = OP_ERASE;
-    return query(sock, rc, &protocol, response);
+int op_erase(int *sock, int *rc, char *key, response_t *response) {
+    command_t command = {OP_ERASE, "", ""};
+    strcpy(command.key, key);
+    return query(sock, rc, &command, response);
 }
 
-int op_set(int *sock, int *rc, char *key, char *value, protocol_t *response) {
-    protocol_t protocol = {OP_SET, "", ""};
-    strcpy(protocol.key, key);
-    strcpy(protocol.value, value);
-    response->operation = OP_SET;
-    return query(sock, rc, &protocol, response);
+int op_set(int *sock, int *rc, char *key, char *value, response_t *response) {
+    command_t command = {OP_SET, "", ""};
+    strcpy(command.key, key);
+    strcpy(command.value, value);
+    return query(sock, rc, &command, response);
 }
 
-int op_get(int *sock, int *rc, char *key, protocol_t *response) {
-    protocol_t protocol = {OP_GET, "", ""};
-    strcpy(protocol.key, key);
-    response->operation = OP_GET;
-    return query(sock, rc, &protocol, response);
+int op_get(int *sock, int *rc, char *key, response_t *response) {
+    command_t command = {OP_GET, "", ""};
+    strcpy(command.key, key);
+    return query(sock, rc, &command, response);
 }

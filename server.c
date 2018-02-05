@@ -7,25 +7,20 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include <ctype.h>
 #include "protocol.h"
 #include "rb_tree.h"
+#include "map_interface.h"
+#include "tree_map.h"
 
 #define DEFAULT_PORT (7500)
 #define MAX_CLIENTS (1010)
-// #define KEY_SIZE (16)
-// #define VALUE_SIZE (16)
-
-Tree *tree;
+#define BAD_PORT (2)
+#define MAX_PORT (65535)
 
 typedef struct status_t {
     int val;
 } status_t;
-
-typedef struct map_t {
-    status_t * (*set) (struct map_t * map, char * key, char * value);
-    char * (*get) (struct map_t * map, char * key);
-    Tree *tree;
-} map_t;
 
 typedef struct config_t {
     int port;
@@ -38,28 +33,12 @@ typedef struct client_params_t {
     pthread_mutex_t mutex;
 } client_params_t;
 
-typedef struct tree_map_t {
-    map_t map;
-    void * root;
-} tree_map_t;
-
-typedef struct hash_map_t {
-    map_t map;
-    void * table;
-    int size;
-} hash_map_t;
-
-tree_map_t * tree_map_init () {
-
-}
-
-int handle_query(int *rc, int *sock, Tree *T) {
-    protocol_t query;
-    protocol_t response;
+int handle_query(int *rc, int *sock, map_t *map) {
+    command_t query;
+    response_t response;
     *rc = recv(*sock, &query, sizeof(query), 0);
-    response = query;
 
-    printf("key: %s, value: %s\n", query.key, query.value);
+    printf("operation: %d, key: %s, value: %s\n", query.operation, query.key, query.value);
     if (*rc < 0) {
         perror("ошибка вызова recv");
         return (EXIT_FAILURE);
@@ -67,18 +46,13 @@ int handle_query(int *rc, int *sock, Tree *T) {
     else {
         switch (query.operation) {
             case OP_ERASE:
-                erase(T, query.key);
-                response.operation = SUCCESS;
+                response = map->remove(map, query.key);
                 break;
             case OP_SET:
-                insert(T, query.key, query.value);
-                response.operation = SUCCESS;          
+                response = map->set(map, query.key, query.value);
                 break;
             case OP_GET:
-                puts("here1\n");
-                getValue(T, query.key, response.value);
-                puts("here2\n");
-                response.operation = SUCCESS;
+                response = map->get(map, query.key);
                 break;
         }
     }
@@ -94,11 +68,7 @@ void * client_handler (void * arg) {
     client_params_t client_params = *_client_params;
     pthread_mutex_unlock (&_client_params->mutex);
 
-    puts("Handling");
-    ///////////////////////////////
-
-    int32_t n;
-    //getting number of operations;
+    int32_t n;  //number of operations
     int rc = recv(client_params.fd, &n, sizeof (n), 0);
 
     if (rc <= 0) {
@@ -106,7 +76,7 @@ void * client_handler (void * arg) {
         return (EXIT_FAILURE);
     }
     else {
-        printf("%d\n", n);
+        printf("Handling %d opearions\n", n);
     }
 
     rc = send(client_params.fd, "0", 1, 0);
@@ -116,11 +86,10 @@ void * client_handler (void * arg) {
 
     int i;
     for (i = 0; i < n; i++) {
-        handle_query(&rc, &client_params.fd, tree);
+        handle_query(&rc, &client_params.fd, &client_params.config->map);
     }
 
-    puts("Printing\n");
-    printTree(tree->root, 3);
+    tree_map_print(&client_params.config->map);
 }
 
 int run_server(config_t *config) {
@@ -128,8 +97,7 @@ int run_server(config_t *config) {
     int rc;
     char buf[1];
     local.sin_family = AF_INET;
-    // local.sin_port = htons (config->port);
-    local.sin_port = htons (DEFAULT_PORT);
+    local.sin_port = htons (config->port);
     local.sin_addr.s_addr = htonl (INADDR_ANY);
 
     map_t *map = &config->map;
@@ -154,10 +122,10 @@ int run_server(config_t *config) {
     client_params_t client_params;
     pthread_mutex_init (&client_params.mutex, NULL);
     pthread_mutex_lock (&client_params.mutex);
+    client_params.config = config;
 
     for (;;){
         int fd = accept(sock, NULL, NULL);
-        puts("Accepted");
 
         if (fd < 0) {
             perror("ошибка вызова accept");
@@ -167,34 +135,54 @@ int run_server(config_t *config) {
         pthread_t thread;
         client_params.fd = fd;
         int rv = pthread_create (&thread, NULL, client_handler, &client_params);
-        puts("Created");
-        if (0 == rv)
-        pthread_mutex_lock (&client_params.mutex);
+        if (0 == rv){
+            pthread_mutex_lock (&client_params.mutex);
+        }
     }
-
-    printTree(tree->root, 3);
-    deleteTree(tree);
 }
 
-map_t map_init(){
-    tree = createTree();
+int a_to_i(int *num, char *str){
+    *num = 0;
 
-    map_t map;
-    // map.tree = createTree();
-    return map;
-}
-
-int parse_config(config_t *config, int argc, char **argv){
+    int len = strlen(str);
+    int i;
+    for(i = 0; i < len; i++){
+        if (isdigit(str[i])){
+            *num *= 10;
+            *num += str[i] - '0';
+        }
+        else{
+            return BAD_PORT;
+        }
+        if (*num > MAX_PORT){
+            *num = 0;
+            return BAD_PORT;
+        }
+    }
     return 0;
 }
 
+int parse_config(config_t *config, int argc, char **argv){
+
+    if (argc > 1){
+        int rv = a_to_i(&config->port, argv[1]);
+        if (rv != 0){
+            return EXIT_FAILURE;
+        }
+
+        return EXIT_SUCCESS;
+    }
+
+    return EXIT_SUCCESS;
+}
+
 int main (int argc, char * argv[]) {
-    tree_map_t tree_map;
-    tree_map.map = map_init ();
+    map_t map;
+    tree_map_init(&map);
 
     config_t config = {
         .port = DEFAULT_PORT,
-        .map = tree_map.map,
+        .map = map,
     };
 
     //парсинг аргументов из вызова программы
@@ -205,6 +193,7 @@ int main (int argc, char * argv[]) {
     rv = run_server (&config);
 
     if (rv != 0){
+        printf("Fail");
         return (rv);
     }
 

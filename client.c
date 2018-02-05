@@ -13,7 +13,7 @@
 
 int glob = 5;
 
-typedef struct client_params_t{
+typedef struct client_params_t {
     // struct sockaddr_in *peer;
     int id;
 } client_params_t;
@@ -67,8 +67,7 @@ void * run_client(void * arg){
 
     printf("Client %d is sending %d operations\n", client_params.id, n);
 
-    //insert
-    protocol_t response;
+    response_t response;
 
     int i, res;
     for (i = 0; i < n; i++) {
@@ -88,9 +87,6 @@ void * run_client(void * arg){
                 break;
         }
 
-        printf("ID: %d -> oper: %d, resp_op: %d, key: %s, value: %s, sended key: %s, value %s\n", 
-            client_params.id, oper, response.operation, response.key, response.value, key, value);
-        
         free(key);
         free(value);
         
