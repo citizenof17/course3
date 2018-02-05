@@ -39,7 +39,7 @@ static response_t get(map_t * map, char * key){
     return response;
 }
 
-static response_t remove(map_t * map, char * key){
+static response_t rem(map_t * map, char * key){
     PREPARE_IMPL(map)
 
     erase(impl->tree, key);
@@ -55,16 +55,16 @@ void tree_map_init(map_t * map){
     
     map->get = &get;
     map->set = &set;
-    map->remove = &remove;
+    map->rem = &rem;
 }
 
 void tree_map_free(map_t *map){
     PREPARE_IMPL(map);
     deleteTree(impl->tree);
+    free(map->impl);
 }
 
 void tree_map_print(map_t *map){
     PREPARE_IMPL(map);
-
     printTree(impl->tree->root, 3);
 }

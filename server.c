@@ -12,9 +12,10 @@
 #include "rb_tree.h"
 #include "map_interface.h"
 #include "tree_map.h"
+#include "tree_hash_map.h"
 
-#define DEFAULT_PORT (7500)
 #define MAX_CLIENTS (1010)
+#define DEFAULT_PORT (7500)
 #define BAD_PORT (2)
 #define MAX_PORT (65535)
 
@@ -28,7 +29,7 @@ typedef struct config_t {
 } config_t; 
 
 typedef struct client_params_t {
-    config_t * config;
+    config_t *config;
     int fd;
     pthread_mutex_t mutex;
 } client_params_t;
@@ -46,7 +47,7 @@ int handle_query(int *rc, int *sock, map_t *map) {
     else {
         switch (query.operation) {
             case OP_ERASE:
-                response = map->remove(map, query.key);
+                response = map->rem(map, query.key);
                 break;
             case OP_SET:
                 response = map->set(map, query.key, query.value);
@@ -76,7 +77,7 @@ void * client_handler (void * arg) {
         return (EXIT_FAILURE);
     }
     else {
-        printf("Handling %d opearions\n", n);
+        printf("Handling %d operations\n", n);
     }
 
     rc = send(client_params.fd, "0", 1, 0);
@@ -89,7 +90,7 @@ void * client_handler (void * arg) {
         handle_query(&rc, &client_params.fd, &client_params.config->map);
     }
 
-    tree_map_print(&client_params.config->map);
+    tree_hash_map_print(&client_params.config->map);
 }
 
 int run_server(config_t *config) {
@@ -141,7 +142,7 @@ int run_server(config_t *config) {
     }
 }
 
-int a_to_i(int *num, char *str){
+int parse_str(int *num, char *str){
     *num = 0;
 
     int len = strlen(str);
@@ -165,7 +166,7 @@ int a_to_i(int *num, char *str){
 int parse_config(config_t *config, int argc, char **argv){
 
     if (argc > 1){
-        int rv = a_to_i(&config->port, argv[1]);
+        int rv = parse_str(&config->port, argv[1]);
         if (rv != 0){
             return EXIT_FAILURE;
         }
@@ -178,7 +179,7 @@ int parse_config(config_t *config, int argc, char **argv){
 
 int main (int argc, char * argv[]) {
     map_t map;
-    tree_map_init(&map);
+    tree_hash_map_init(&map, 10);
 
     config_t config = {
         .port = DEFAULT_PORT,

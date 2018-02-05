@@ -6,17 +6,59 @@
 #include <unistd.h>
 #include <time.h>
 #include <pthread.h>
+#include <string.h>
 #include "protocol.h"
 #include "operations.h"
 
 #define DEFAULT_PORT (7500)
+#define DEFAULT_PORT (7500)
+#define BAD_PORT (2)
+#define MAX_PORT (65535)
 
 int glob = 5;
+
+typedef struct config_t {
+    int port;
+} config_t;
 
 typedef struct client_params_t {
     // struct sockaddr_in *peer;
     int id;
+    config_t *config;
 } client_params_t;
+
+int parse_str(int *num, char *str){
+    *num = 0;
+    int len = strlen(str);
+    int i;
+    for(i = 0; i < len; i++){
+        if (isdigit(str[i])){
+            *num *= 10;
+            *num += str[i] - '0';
+        }
+        else{
+            return BAD_PORT;
+        }
+        if (*num > MAX_PORT){
+            *num = 0;
+            return BAD_PORT;
+        }
+    }
+    return 0;
+}
+
+int parse_config(config_t *config, int argc, char **argv){
+    if (argc > 1){
+        int rv = parse_str(&config->port, argv[1]);
+        if (rv != 0){
+            return EXIT_FAILURE;
+        }
+
+        return EXIT_SUCCESS;
+    }
+
+    return EXIT_SUCCESS;
+}
 
 char *gen_str(){
     int size = 5;
@@ -33,7 +75,7 @@ void * run_client(void * arg){
 
     struct sockaddr_in peer;
     peer.sin_family = AF_INET;
-    peer.sin_port = htons(DEFAULT_PORT);
+    peer.sin_port = htons(client_params.config->port);
     peer.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     int sock;
@@ -101,14 +143,14 @@ void * run_client(void * arg){
     return (EXIT_SUCCESS);
 }
 
-int create_clients(){
+int create_clients(config_t *config){
     struct sockaddr_in peer;
     int sock;
     int rc;
     char buf[1];
 
     peer.sin_family = AF_INET;
-    peer.sin_port = htons(DEFAULT_PORT);
+    peer.sin_port = htons(config->port);
     peer.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     int workers = glob;
@@ -117,6 +159,7 @@ int create_clients(){
     for(i = 0; i < workers; i++){
         pthread_t thread;
         client_params_t params = {
+            .config = config,
             .id = i,
         };
 
@@ -138,10 +181,15 @@ int create_clients(){
     return (EXIT_SUCCESS);
 }
 
-int main(void) {
+int main(int argc, char * argv[]) {
     srand(time(NULL));
 
-    int rv = create_clients();
+    config_t config = {
+        .port = DEFAULT_PORT,
+    };
+
+    int rv = parse_config (&config, argc, argv);
+    rv = create_clients(&config);
 
     if (rv != 0){
         printf("Failed %d\n", rv);
