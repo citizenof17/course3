@@ -120,12 +120,15 @@ void * run_client(void * arg){
         switch(oper) {
             case 0:
                 res = op_erase(&sock, &rc, key, &response);
+                printf("Rem %s\n", response.answer);
                 break;
             case 1:
                 res = op_set(&sock, &rc, key, value, &response);
+                printf("Set %s\n", response.answer);
                 break;
             case 2:
                 res = op_get(&sock, &rc, key, &response);
+                printf("Get %s -> %s\n", response.answer, response.value);
                 break;
         }
 

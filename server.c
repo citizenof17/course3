@@ -12,6 +12,7 @@
 #include "rb_tree.h"
 #include "map_interface.h"
 #include "tree_map.h"
+#include "hash_map.h"
 #include "tree_hash_map.h"
 
 #define MAX_CLIENTS (1010)
@@ -90,7 +91,7 @@ void * client_handler (void * arg) {
         handle_query(&rc, &client_params.fd, &client_params.config->map);
     }
 
-    tree_hash_map_print(&client_params.config->map);
+    hash_map_print(&client_params.config->map);
 }
 
 int run_server(config_t *config) {
@@ -179,7 +180,7 @@ int parse_config(config_t *config, int argc, char **argv){
 
 int main (int argc, char * argv[]) {
     map_t map;
-    tree_hash_map_init(&map, 10);
+    hash_map_init(&map, 10, 2);
 
     config_t config = {
         .port = DEFAULT_PORT,

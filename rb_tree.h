@@ -1,8 +1,6 @@
 #pragma once
 
 typedef struct Node {
-  // int key;
-  // int value;
   char *key;
   char *value;
   char color;

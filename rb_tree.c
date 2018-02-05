@@ -163,7 +163,12 @@ void insert(Tree *T, char *key, char *value) {  //rb-insert changes value if key
     }
     else { //z->key == x->key -- change x->value
       free(x->value);
-      x->value = z->value; //?????
+      x->value = (char *)malloc(strlen(z->value) + 1);
+      strcpy(x->value, z->value);
+      free(z->key);
+      free(z->value);
+      free(z);
+      // x->value = z->value; //?????
       return;
     }
   }

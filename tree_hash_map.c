@@ -2,10 +2,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
 #include "tree_hash_map.h"
 #include "rb_tree.h"
 #include "protocol.h"
+#include "hash.h"
 
 #define tree_t Tree
 #define MIN_SIZE (5)
@@ -18,21 +18,6 @@ typedef struct {
     int size;
     tree_t **trees;
 } tree_hash_impl_t;
-
-int64_t A = 1e4 + 7;
-int64_t M = 1e9 + 7;
-
-int64_t get_hash(char *str){
-    int64_t hash = 0;
-
-    int i = 0;
-    while(str[i] != '\0'){
-        hash = (hash * A + str[i]) % M;
-        i++;
-    }
-
-    return hash;
-}
 
 static response_t set(map_t * map, char * key, char * value){
     PREPARE_IMPL(map)
