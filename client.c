@@ -7,6 +7,7 @@
 #include <time.h>
 #include <pthread.h>
 #include <string.h>
+#include <ctype.h>
 #include "protocol.h"
 #include "operations.h"
 
@@ -84,12 +85,12 @@ void * run_client(void * arg){
     
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("ошибка вызова socket");
-        return (EXIT_FAILURE);
+        return ((void *)EXIT_FAILURE);
     }
     
     if ((rc = connect(sock, (struct sockaddr *)&peer, sizeof(peer))) > 0) {
         perror("ошибка вызова connect");
-        return (EXIT_FAILURE);        
+        return ((void *)EXIT_FAILURE);        
     }
     printf("Connected %d\n", client_params.id);
 
@@ -97,12 +98,12 @@ void * run_client(void * arg){
 
     if ((rc = send(sock, &n, sizeof(n), 0)) <= 0) {
         perror("ошибка вызова send");
-        return (EXIT_FAILURE);
+        return ((void *)EXIT_FAILURE);
     }
 
     if ((rc = recv(sock, buf, 1, 0)) <= 0) {
         perror("ошибка вызова recv");
-        return (EXIT_FAILURE);
+        return ((void *)EXIT_FAILURE);
     }
 
     //////////////////////
@@ -137,13 +138,13 @@ void * run_client(void * arg){
         
         if (res != 0){
             printf("Operation Error");
-            return (EXIT_FAILURE);
+            return ((void *)EXIT_FAILURE);
         }
     }
 
     close(sock);
     glob--;
-    return (EXIT_SUCCESS);
+    return ((void *)EXIT_SUCCESS);
 }
 
 int create_clients(config_t *config){

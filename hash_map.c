@@ -6,6 +6,8 @@
 #include "hash.h"
 #include "protocol.h"
 
+#define LOAD_FACTOR (0.75)
+
 typedef struct entry_t {
     char *key;
     char *value;
@@ -28,6 +30,7 @@ hash_map_t *create_hash_map(int arr_size, int size_limit, int multiplier){
     map->size_limit = size_limit;
     map->multiplier = multiplier;
     map->entries = (entry_t **)malloc(arr_size * sizeof(entry_t *));
+    memset(map->entries, NULL, sizeof(*map->entries));
 
     return map;
 }
@@ -65,11 +68,93 @@ void delete_hash_map(hash_map_t *map){
     free(map);
 }
 
+void get_all_entries(entry_t **aux_entries, hash_map_t *map){
+    int i;
+    int j = 0; 
+    for (i = 0; i < map->arr_size; i++){
+        // check each row of the array
+        entry_t *entry = map->entries[i];  
+        
+        // check each column of the array and store entry
+        while(entry != NULL){
+            aux_entries[j++] = entry;
+            entry = entry->next;
+        }
+    }
+}
+
+// free entries without deleting keys and values
+void entry_recursive_free_light(entry_t *entry){
+    if (entry == NULL){ return; }
+
+    if (entry->next){
+        entry_recursive_free_light(entry->next);
+    }
+    entry->next = NULL;
+}
+
+// free hash_map without deleting entries
+void delete_hash_map_light(hash_map_t *map){
+    int i;
+    for(i = 0; i < map->arr_size; i++){
+        entry_recursive_free_light(map->entries[i]);
+    }
+
+    free(map);
+}
+
+void hash_map_insert_light(hash_map_t *map, entry_t *entry){
+    int index = get_hash(entry->key) % map->arr_size;
+    if (map->entries[index] == NULL){
+        map->entries[index] = entry;
+    }
+    else{
+        entry_t *curr_entry = map->entries[index];
+
+        while(curr_entry){
+            if (curr_entry->next == NULL){
+                curr_entry->next = entry;
+                return;                  
+            }
+            curr_entry = curr_entry->next;
+        } 
+    }
+}
+
+void hash_map_rebuild(hash_map_t *map){
+    // store all entries in map
+    entry_t **aux_entries = (entry_t**)malloc(map->size * sizeof(entry_t*));
+    get_all_entries(aux_entries, map);
+
+    // free old map
+    int size = map->size;
+    int size_limit = map->size_limit;
+    int multiplier = map->multiplier;
+    int arr_size = map->arr_size;
+    delete_hash_map_light(map);
+
+    int new_size = arr_size * multiplier;
+    map = create_hash_map(new_size, new_size * LOAD_FACTOR, multiplier);
+    map->size = size;
+    // add all entries to new hash map
+    int i;
+    for (i = 0; i < size; i++){
+        hash_map_insert_light(map, aux_entries[i]);
+    }
+}
+
 void hash_map_insert(hash_map_t *map, char *key, char *value){
     int index = get_hash(key) % map->arr_size;
 
+    // if map size is bigger than size limit then hash map 
+    // should be rebuilded
+    if (map->size >= map->size_limit){
+        hash_map_rebuild(map);
+    }
+
     if (map->entries[index] == NULL){
         map->entries[index] = make_new_entry(key, value);
+        map->size++;
     }
     else{
         entry_t *curr_entry = map->entries[index];
@@ -83,10 +168,12 @@ void hash_map_insert(hash_map_t *map, char *key, char *value){
             }
             else if (curr_entry->next == NULL){
                 curr_entry->next = make_new_entry(key, value);
+                map->size++;
+                
                 return;                  
             }
             curr_entry = curr_entry->next;
-        } 
+        }
     }
 }
 
@@ -98,6 +185,7 @@ void hash_map_erase(hash_map_t *map, char *key){
 
     while(curr_entry){
         if (strcmp(curr_entry->key, key) == 0){
+            map->size--;
             *last_entry_pointer = curr_entry->next;
             free(curr_entry->value);
             free(curr_entry->key);
@@ -165,7 +253,8 @@ static response_t rem(map_t *map, char *key){
 
 void hash_map_init(map_t *map, int arr_size, int multiplier){
     map->impl = (hash_impl_t *)malloc(sizeof(hash_impl_t));
-    ((hash_impl_t *)map->impl)->map = create_hash_map(arr_size, arr_size * 2, multiplier);
+    ((hash_impl_t *)map->impl)->map = 
+        create_hash_map(arr_size, arr_size * LOAD_FACTOR, multiplier);
 
     map->get = &get;
     map->set = &set;
@@ -181,9 +270,26 @@ void hash_map_print(map_t *map){
     PREPARE_IMPL(map)
 
     hash_map_t hash_map = *(impl->map);
+    printf("Size: %d\n", hash_map.size);
     int i;
     for(i = 0; i < hash_map.arr_size; i++){
         entry_t *entry = hash_map.entries[i];
+        printf("%d ", i);
+        while(entry){
+            printf("|%s %s| ", entry->key, entry->value);
+            entry = entry->next;
+        }
+        printf("\n");
+    }
+}
+
+void prnt(hash_map_t hash_map){
+
+    printf("Size: %d\n", hash_map.size);
+    int i;
+    for(i = 0; i < hash_map.arr_size; i++){
+        entry_t *entry = hash_map.entries[i];
+        printf("%d ", i);
         while(entry){
             printf("|%s %s| ", entry->key, entry->value);
             entry = entry->next;

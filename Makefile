@@ -1,4 +1,4 @@
-all: server client
+all: server client clear
 server: tree_map.o tree_hash_map.o rb_tree.o hash_map.o hash.o server.o 
 	gcc -o server rb_tree.o tree_map.o tree_hash_map.o hash_map.o hash.o server.o -pthread 
 client: client.o operations.o 

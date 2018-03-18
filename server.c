@@ -19,6 +19,8 @@
 #define DEFAULT_PORT (7500)
 #define BAD_PORT (2)
 #define MAX_PORT (65535)
+#define DEFAULT_SIZE (10)
+#define DEFAULT_MULTIPLIER (2)
 
 typedef struct status_t {
     int val;
@@ -65,7 +67,7 @@ int handle_query(int *rc, int *sock, map_t *map) {
     }
 }
 
-void * client_handler (void * arg) {
+void * client_handler(void * arg) {
     client_params_t * _client_params = arg;
     client_params_t client_params = *_client_params;
     pthread_mutex_unlock (&_client_params->mutex);
@@ -75,7 +77,7 @@ void * client_handler (void * arg) {
 
     if (rc <= 0) {
         printf("Failed\n");
-        return (EXIT_FAILURE);
+        return ((void *)EXIT_FAILURE);
     }
     else {
         printf("Handling %d operations\n", n);
@@ -180,7 +182,7 @@ int parse_config(config_t *config, int argc, char **argv){
 
 int main (int argc, char * argv[]) {
     map_t map;
-    hash_map_init(&map, 10, 2);
+    hash_map_init(&map, DEFAULT_SIZE, DEFAULT_MULTIPLIER);
 
     config_t config = {
         .port = DEFAULT_PORT,
