@@ -21,6 +21,10 @@
 #define MAX_PORT (65535)
 #define DEFAULT_SIZE (10)
 #define DEFAULT_MULTIPLIER (2)
+#define TREE_HASH_MAP_SIZE (10)  // debugging value. Must be changed to 1024
+
+// Debug output
+char *OPERS[] = {"Erase", "Set", "Get", "Success", "Fail"};
 
 typedef struct status_t {
     int val;
@@ -42,7 +46,7 @@ int handle_query(int *rc, int *sock, map_t *map) {
     response_t response;
     *rc = recv(*sock, &query, sizeof(query), 0);
 
-    printf("operation: %d, key: %s, value: %s\n", query.operation, query.key, query.value);
+    printf("operation: %s, key: %s, value: %s\n", OPERS[query.operation], query.key, query.value);
     if (*rc < 0) {
         perror("ошибка вызова recv");
         return (EXIT_FAILURE);
@@ -94,6 +98,8 @@ void * client_handler(void * arg) {
     }
 
     hash_map_print(&client_params.config->map);
+    // tree_map_print(&client_params.config->map);
+    // tree_hash_map_print(&client_params.config->map);
 }
 
 int run_server(config_t *config) {
@@ -183,6 +189,8 @@ int parse_config(config_t *config, int argc, char **argv){
 int main (int argc, char * argv[]) {
     map_t map;
     hash_map_init(&map, DEFAULT_SIZE, DEFAULT_MULTIPLIER);
+    // tree_map_init(&map);
+    // tree_hash_map_init(&map, TREE_HASH_MAP_SIZE);
 
     config_t config = {
         .port = DEFAULT_PORT,

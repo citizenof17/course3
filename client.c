@@ -94,7 +94,7 @@ void * run_client(void * arg){
     }
     printf("Connected %d\n", client_params.id);
 
-    int n = rand() % 10;
+    int n = rand() % 15;
 
     if ((rc = send(sock, &n, sizeof(n), 0)) <= 0) {
         perror("ошибка вызова send");

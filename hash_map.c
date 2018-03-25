@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <pthread.h>
 #include "hash_map.h"
 #include "hash.h"
 #include "protocol.h"
@@ -19,9 +20,43 @@ typedef struct hash_map_t {
     int arr_size; //size of array
     int size_limit; //max number of elements
     int multiplier; 
+    int semaphore;
 
     entry_t **entries;
+    pthread_mutex_t *mutex;
 } hash_map_t;
+
+void semaphore_init(hash_map_t *map, int value){
+    map->semaphore = value;
+}
+
+void semaphore_lock(hash_map_t *map){
+    while(1){
+        if (map->semaphore > 0){
+            map->semaphore -= map->arr_size;
+            break;
+        }
+    }
+    // printf("SEMAPHORE %d %d\n", map->arr_size, map->semaphore);
+    while(1){
+        if (map->semaphore == -1){
+            break;
+        }
+    }
+}
+
+void semaphore_enter(hash_map_t *map){
+    while(1){
+        if (map->semaphore > 0){
+            map->semaphore -= 1;
+            break;
+        }
+    }
+}
+
+void semaphore_leave(hash_map_t *map){
+    map->semaphore += 1;
+}
 
 hash_map_t *create_hash_map(int arr_size, int size_limit, int multiplier){
     hash_map_t *map = (hash_map_t *)malloc(sizeof(hash_map_t));
@@ -30,9 +65,22 @@ hash_map_t *create_hash_map(int arr_size, int size_limit, int multiplier){
     map->size_limit = size_limit;
     map->multiplier = multiplier;
     map->entries = (entry_t **)malloc(arr_size * sizeof(entry_t *));
+    map->mutex = (pthread_mutex_t *)malloc(arr_size * sizeof(pthread_mutex_t));
+    semaphore_init(map, map->arr_size);
     memset(map->entries, NULL, sizeof(*map->entries));
 
     return map;
+}
+
+void create_hash_map_light(hash_map_t * map, int arr_size, 
+                           int size_limit, int multiplier){
+    map->size = 0;
+    map->arr_size = arr_size;
+    map->size_limit = size_limit;
+    map->multiplier = multiplier;
+    map->entries = (entry_t **)malloc(arr_size * sizeof(entry_t *));
+    map->mutex = (pthread_mutex_t *)malloc(arr_size * sizeof(pthread_mutex_t));
+    memset(map->entries, NULL, sizeof(*map->entries));
 }
 
 entry_t *make_new_entry(char *key, char *value){
@@ -65,6 +113,7 @@ void delete_hash_map(hash_map_t *map){
         entry_recursive_free(map->entries[i]);
     }
 
+    free(map->mutex);
     free(map);
 }
 
@@ -100,7 +149,7 @@ void delete_hash_map_light(hash_map_t *map){
         entry_recursive_free_light(map->entries[i]);
     }
 
-    free(map);
+    free(map->mutex);
 }
 
 void hash_map_insert_light(hash_map_t *map, entry_t *entry){
@@ -124,7 +173,18 @@ void hash_map_insert_light(hash_map_t *map, entry_t *entry){
 void hash_map_rebuild(hash_map_t *map){
     // store all entries in map
     entry_t **aux_entries = (entry_t**)malloc(map->size * sizeof(entry_t*));
+    int i;
+
+    //semaphore
+    semaphore_lock(map);
+    
+    for(i = 0; i < map->arr_size; i++){
+        pthread_mutex_lock(&map->mutex[i]);
+    }
     get_all_entries(aux_entries, map);
+    for(i = 0; i < map->arr_size; i++){
+        pthread_mutex_unlock(&map->mutex[i]);
+    }
 
     // free old map
     int size = map->size;
@@ -134,24 +194,32 @@ void hash_map_rebuild(hash_map_t *map){
     delete_hash_map_light(map);
 
     int new_size = arr_size * multiplier;
-    map = create_hash_map(new_size, new_size * LOAD_FACTOR, multiplier);
+    create_hash_map_light(map, new_size, new_size * LOAD_FACTOR, multiplier);
     map->size = size;
+
     // add all entries to new hash map
-    int i;
     for (i = 0; i < size; i++){
         hash_map_insert_light(map, aux_entries[i]);
     }
+
+    semaphore_init(map, map->arr_size - 1);
 }
 
 void hash_map_insert(hash_map_t *map, char *key, char *value){
-    int index = get_hash(key) % map->arr_size;
-
     // if map size is bigger than size limit then hash map 
     // should be rebuilded
+
+    // printf("BEFORE ENTER %s %d\n", key, map->semaphore);
+    semaphore_enter(map);
+    // printf("AFTER ENTER %s %d\n", key, map->semaphore);
     if (map->size >= map->size_limit){
+        printf("REBUILD\n");
         hash_map_rebuild(map);
     }
 
+    int index = get_hash(key) % map->arr_size;
+
+    pthread_mutex_lock(&map->mutex[index]);
     if (map->entries[index] == NULL){
         map->entries[index] = make_new_entry(key, value);
         map->size++;
@@ -164,21 +232,25 @@ void hash_map_insert(hash_map_t *map, char *key, char *value){
                 free(curr_entry->value);
                 curr_entry->value = (char *)malloc(strlen(value) + 1);
                 strcpy(curr_entry->value, value);
-                return;
+                break;
             }
             else if (curr_entry->next == NULL){
                 curr_entry->next = make_new_entry(key, value);
                 map->size++;
-                
-                return;                  
+                break;                  
             }
             curr_entry = curr_entry->next;
         }
     }
+    pthread_mutex_unlock(&map->mutex[index]);
+    semaphore_leave(map);
+    // printf("AFTER LEAVE %s %d\n", key, map->semaphore);
 }
 
 void hash_map_erase(hash_map_t *map, char *key){
+    semaphore_enter(map);
     int index = get_hash(key) % map->arr_size;
+    pthread_mutex_lock(&map->mutex[index]);
 
     entry_t *curr_entry = map->entries[index];
     entry_t **last_entry_pointer = &map->entries[index];
@@ -195,10 +267,14 @@ void hash_map_erase(hash_map_t *map, char *key){
         last_entry_pointer = &curr_entry->next;
         curr_entry = curr_entry->next;
     }
+    pthread_mutex_unlock(&map->mutex[index]);
+    semaphore_leave(map);
 }
 
 void hash_map_get(hash_map_t *map, char *key, char *value){
+    semaphore_enter(map);
     int index = get_hash(key) % map->arr_size;
+    pthread_mutex_lock(&map->mutex[index]);
 
     entry_t *curr_entry = map->entries[index];
 
@@ -211,6 +287,8 @@ void hash_map_get(hash_map_t *map, char *key, char *value){
     }
 
     strcpy(value, "nil");
+    pthread_mutex_unlock(&map->mutex[index]);
+    semaphore_leave(map);
 }
 
 #define PREPARE_IMPL(map) \
