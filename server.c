@@ -12,7 +12,7 @@
 #include "rb_tree.h"
 #include "map_interface.h"
 #include "tree_map.h"
-#include "hash_map.h"
+#include "hash_map2.h"
 #include "tree_hash_map.h"
 
 #define MAX_CLIENTS (1010)

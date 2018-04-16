@@ -67,6 +67,10 @@ hash_map_t *create_hash_map(int arr_size, int size_limit, int multiplier){
     map->entries = (entry_t **)malloc(arr_size * sizeof(entry_t *));
     map->mutex = (pthread_mutex_t *)malloc(arr_size * sizeof(pthread_mutex_t));
     semaphore_init(map, map->arr_size);
+    int i;
+    for(i = 0; i < map->arr_size; i++){
+        pthread_mutex_init(&map->mutex[i], NULL);
+    }
     memset(map->entries, NULL, sizeof(*map->entries));
 
     return map;
@@ -80,6 +84,10 @@ void create_hash_map_light(hash_map_t * map, int arr_size,
     map->multiplier = multiplier;
     map->entries = (entry_t **)malloc(arr_size * sizeof(entry_t *));
     map->mutex = (pthread_mutex_t *)malloc(arr_size * sizeof(pthread_mutex_t));
+    int i;
+    for(i = 0; i < map->arr_size; i++){
+        pthread_mutex_init(&map->mutex[i], NULL);
+    }
     memset(map->entries, NULL, sizeof(*map->entries));
 }
 
