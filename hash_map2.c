@@ -153,10 +153,12 @@ void hash_map_erase(hash_map_t *map, char *key){
 
     int index = get_hash(key) % map->arr_size;
 
+    int cnt = 0;
     // what about situation: [a, DEL, b, DEL, c, DEL, DEL] ?
     while(map->entries[index].deleted || 
           (map->entries[index].key != NULL &&
-          strcmp(map->entries[index].key, key)) != 0){
+          strcmp(map->entries[index].key, key)) != 0 &&
+          cnt++ < map->arr_size){
         index = (index + 1) % map->arr_size;
     }
 
@@ -177,9 +179,11 @@ void hash_map_get(hash_map_t *map, char *key, char *value){
     pthread_rwlock_rdlock(&map->rwlock);
     int index = get_hash(key) % map->arr_size;
 
+    int cnt = 0;
     while(map->entries[index].deleted || 
           (map->entries[index].key != NULL &&
-          strcmp(map->entries[index].key, key)) != 0){
+          strcmp(map->entries[index].key, key)) != 0 &&
+          cnt++ < map->arr_size){
         index = (index + 1) % map->arr_size;
     }
 

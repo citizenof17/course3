@@ -10,7 +10,8 @@
 
 typedef struct {
     tree_t *tree;
-    pthread_mutex_t mutex;
+    // pthread_mutex_t mutex;
+    pthread_rwlock_t rwlock;
 } tree_impl_t;
 
 #define PREPARE_IMPL(map) \
@@ -21,9 +22,11 @@ typedef struct {
 static response_t set(map_t * map, char * key, char * value){
     PREPARE_IMPL(map)
 
-    pthread_mutex_lock(&impl->mutex);
+    // pthread_mutex_lock(&impl->mutex);
+    pthread_rwlock_wrlock(&impl->rwlock);
     insert(impl->tree, key, value);
-    pthread_mutex_unlock(&impl->mutex);
+    pthread_rwlock_unlock(&impl->rwlock);
+    // pthread_mutex_unlock(&impl->mutex);
     response_t response = {"STORED", ""};
     return response;
 }
@@ -32,9 +35,11 @@ static response_t get(map_t * map, char * key){
     PREPARE_IMPL(map)
 
     response_t response;
-    pthread_mutex_lock(&impl->mutex);
+    // pthread_mutex_lock(&impl->mutex);
+    pthread_rwlock_rdlock(&impl->rwlock);
     getValue(impl->tree, key, response.value);
-    pthread_mutex_unlock(&impl->mutex);
+    pthread_rwlock_unlock(&impl->rwlock);
+    // pthread_mutex_unlock(&impl->mutex);
 
     if (strcmp(response.value, "nil") == 0){  ///???? handle empty node
         strcpy(response.answer, "NOT_FOUND");
@@ -48,9 +53,11 @@ static response_t get(map_t * map, char * key){
 static response_t rem(map_t * map, char * key){
     PREPARE_IMPL(map)
 
-    pthread_mutex_lock(&impl->mutex);
+    // pthread_mutex_lock(&impl->mutex);
+    pthread_rwlock_wrlock(&impl->rwlock);
     erase(impl->tree, key);
-    pthread_mutex_unlock(&impl->mutex);
+    pthread_rwlock_unlock(&impl->rwlock);
+    // pthread_mutex_unlock(&impl->mutex);
     
     response_t response = {"DELETED", ""};
     return response;
@@ -61,7 +68,8 @@ void tree_map_init(map_t * map){
 
     map->impl = malloc(sizeof(tree_impl_t));
     ((tree_impl_t *)map->impl)->tree = createTree();
-    pthread_mutex_init(&((tree_impl_t *)map->impl)->mutex, NULL);
+    // pthread_mutex_init(&((tree_impl_t *)map->impl)->mutex, NULL);
+    pthread_rwlock_init(&((tree_impl_t *)map->impl)->rwlock, NULL);
 
     map->get = &get;
     map->set = &set;

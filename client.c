@@ -119,15 +119,15 @@ void * run_client(void * arg){
         int oper = rand() % 3;
         
         switch(oper) {
-            case 0:
+            case OP_ERASE:
                 res = op_erase(&sock, &rc, key, &response);
                 printf("Rem %s\n", response.answer);
                 break;
-            case 1:
+            case OP_SET:
                 res = op_set(&sock, &rc, key, value, &response);
                 printf("Set %s\n", response.answer);
                 break;
-            case 2:
+            case OP_GET:
                 res = op_get(&sock, &rc, key, &response);
                 printf("Get %s -> %s\n", response.answer, response.value);
                 break;

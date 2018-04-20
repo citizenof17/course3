@@ -97,8 +97,8 @@ void * client_handler(void * arg) {
         handle_query(&rc, &client_params.fd, &client_params.config->map);
     }
 
-    hash_map_print(&client_params.config->map);
-    // tree_map_print(&client_params.config->map);
+    // hash_map_print(&client_params.config->map);
+    tree_map_print(&client_params.config->map);
     // tree_hash_map_print(&client_params.config->map);
 }
 
@@ -188,8 +188,8 @@ int parse_config(config_t *config, int argc, char **argv){
 
 int main (int argc, char * argv[]) {
     map_t map;
-    hash_map_init(&map, DEFAULT_SIZE, DEFAULT_MULTIPLIER);
-    // tree_map_init(&map);
+    // hash_map_init(&map, DEFAULT_SIZE, DEFAULT_MULTIPLIER);
+    tree_map_init(&map);
     // tree_hash_map_init(&map, TREE_HASH_MAP_SIZE);
 
     config_t config = {
