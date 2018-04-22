@@ -35,7 +35,8 @@ hash_map_t *create_hash_map(int arr_size, double load_factor, int multiplier){
     map->load_factor = load_factor;
     map->entries = (entry_t *)malloc(arr_size * sizeof(entry_t));
     pthread_rwlock_init(&map->rwlock, NULL);
-    memset(map->entries, NULL, sizeof(*map->entries));
+
+    memset(map->entries, NULL, arr_size * sizeof(entry_t));
 
     return map;
 }
@@ -100,7 +101,7 @@ void hash_map_insert(hash_map_t *map, char *key, char *value){
     pthread_rwlock_wrlock(&map->rwlock);
 
     if (map->size >= map->arr_size * map->load_factor){
-        printf("SIZE %d %d %f\n", map->size, map->arr_size, map->load_factor);
+        // printf("SIZE %d %d %f\n", map->size, map->arr_size, map->load_factor);
         hash_map_rebuild(map);
     }
 
