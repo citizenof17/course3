@@ -101,7 +101,6 @@ void hash_map_insert(hash_map_t *map, char *key, char *value){
     pthread_rwlock_wrlock(&map->rwlock);
 
     if (map->size >= map->arr_size * map->load_factor){
-        // printf("SIZE %d %d %f\n", map->size, map->arr_size, map->load_factor);
         hash_map_rebuild(map);
     }
 
@@ -192,11 +191,12 @@ void hash_map_get(hash_map_t *map, char *key, char *value){
     if (map->entries[index].key != NULL &&
           strcmp(map->entries[index].key, key) == 0){
         strcpy(value, map->entries[index].value);
-        return;
+    }
+    else{
+        strcpy(value, "nil");
     }
 
     // didn't find
-    strcpy(value, "nil");
     pthread_rwlock_unlock(&map->rwlock);
 }
 

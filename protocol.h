@@ -1,7 +1,7 @@
 #pragma once
 
-#define KEY_SIZE 250
-#define VALUE_SIZE 500
+#define KEY_SIZE 20
+#define VALUE_SIZE 20
 #define ANSWER_SIZE 15
 
 #define protocol_t command_t
