@@ -22,6 +22,7 @@
 #define DEFAULT_SIZE (10)
 #define DEFAULT_MULTIPLIER (2)
 #define TREE_HASH_MAP_SIZE (10)  // debugging value. Must be changed to 1024
+#define IP_ADDR ("2.92.55.120")
 
 // Debug output
 char *OPERS[] = {"Erase", "Set", "Get", "Success", "Fail"};
@@ -78,7 +79,7 @@ void * client_handler(void * arg) {
 
     int32_t n;  //number of operations
     int rc = recv(client_params.fd, &n, sizeof (n), 0);
-
+    printf("RECV %d\n", rc);
     if (rc <= 0) {
         printf("Failed\n");
         return ((void *)EXIT_FAILURE);
@@ -103,16 +104,17 @@ void * client_handler(void * arg) {
 }
 
 int run_server(config_t *config) {
+    printf("Running\n");
     struct sockaddr_in local;
     int rc;
     char buf[1];
     local.sin_family = AF_INET;
-    local.sin_port = htons (config->port);
-    local.sin_addr.s_addr = htonl (INADDR_ANY);
+    local.sin_port = htons(config->port);
+    local.sin_addr.s_addr = htonl(INADDR_ANY);
 
     map_t *map = &config->map;
 
-    int sock = socket (AF_INET, SOCK_STREAM, 0);
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         perror ("ошибка вызова socket");
         return (EXIT_FAILURE);
@@ -135,7 +137,10 @@ int run_server(config_t *config) {
     client_params.config = config;
 
     for (;;){
-        int fd = accept(sock, NULL, NULL);
+        struct sockaddr_in client_name;
+        socklen_t client_name_len;
+        int fd = accept (sock, &client_name, &client_name_len);
+        // int fd = accept(sock, NULL, NULL);
 
         if (fd < 0) {
             perror("ошибка вызова accept");

@@ -1,6 +1,8 @@
+target=test_server.o
+
 all: server client clear
-server: tree_map.o tree_hash_map.o rb_tree.o hash_map2.o hash_map.o hash.o test_server.o 
-	gcc -o server rb_tree.o tree_map.o tree_hash_map.o hash_map2.o hash_map.o hash.o test_server.o -pthread 
+server: tree_map.o tree_hash_map.o rb_tree.o hash_map2.o hash_map.o hash.o $(target) 
+	gcc -o server rb_tree.o tree_map.o tree_hash_map.o hash_map2.o hash_map.o hash.o $(target) -lpthread 
 client: client.o operations.o 
 	gcc -o client client.o operations.o -pthread
 rb_tree.o: rb_tree.c

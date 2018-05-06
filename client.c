@@ -15,6 +15,8 @@
 #define DEFAULT_PORT (7500)
 #define BAD_PORT (2)
 #define MAX_PORT (65535)
+#define IP_ADDR ("127.0.0.1")
+#define STR_SIZE (10)
 
 int glob = 5;
 
@@ -61,8 +63,7 @@ int parse_config(config_t *config, int argc, char **argv){
     return EXIT_SUCCESS;
 }
 
-char *gen_str(){
-    int size = 5;
+char *gen_str(int size){
     char *res = malloc(sizeof(char) * size + 1);
     for(int i = 0; i < size; i++){
         res[i] = (char)(rand() % 26 + 'a');
@@ -77,7 +78,7 @@ void * run_client(void * arg){
     struct sockaddr_in peer;
     peer.sin_family = AF_INET;
     peer.sin_port = htons(client_params.config->port);
-    peer.sin_addr.s_addr = inet_addr("127.0.0.1");
+    peer.sin_addr.s_addr = inet_addr(IP_ADDR);
 
     int sock;
     int rc;
@@ -114,8 +115,8 @@ void * run_client(void * arg){
 
     int i, res;
     for (i = 0; i < n; i++) {
-        char *key = gen_str();
-        char *value = gen_str();
+        char *key = gen_str(STR_SIZE);
+        char *value = gen_str(STR_SIZE);
         int oper = rand() % 3;
         
         switch(oper) {
@@ -148,14 +149,14 @@ void * run_client(void * arg){
 }
 
 int create_clients(config_t *config){
-    struct sockaddr_in peer;
-    int sock;
-    int rc;
-    char buf[1];
+    // struct sockaddr_in peer;
+    // int sock;
+    // int rc;
+    // char buf[1];
 
-    peer.sin_family = AF_INET;
-    peer.sin_port = htons(config->port);
-    peer.sin_addr.s_addr = inet_addr("127.0.0.1");
+    // peer.sin_family = AF_INET;
+    // peer.sin_port = htons(config->port);
+    // peer.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     int workers = glob;
     int i;
@@ -174,7 +175,9 @@ int create_clients(config_t *config){
             puts("RV fail");
             return (EXIT_FAILURE);
         }
-        rv = pthread_join(thread, NULL);
+
+        // блокирует поток
+        // rv = pthread_join(thread, NULL);
         if (rv != 0){
             return (EXIT_FAILURE);
         }
