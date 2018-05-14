@@ -85,6 +85,7 @@ void hash_map_rebuild(hash_map_t *map){
     for(i = 0; i < map->arr_size; i++){
         map->entries[i].value = NULL;
         map->entries[i].key = NULL;
+        map->entries[i].deleted = 0;
     }
 
     for(i = 0; i < old_size; i++){
@@ -92,6 +93,7 @@ void hash_map_rebuild(hash_map_t *map){
             hash_map_insert_light(map, aux_entries[i].key, aux_entries[i].value);
         }
     }
+    free(aux_entries);
 }
 
 void hash_map_insert(hash_map_t *map, char *key, char *value){
@@ -251,6 +253,7 @@ void hash_map_init(map_t *map, int arr_size, int multiplier){  // delete multipl
 void hash_map_free(map_t *map){
     PREPARE_IMPL(map)
     delete_hash_map(impl->map);
+    free(map->impl);
 }
 
 void hash_map_print(map_t *map){

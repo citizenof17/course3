@@ -73,25 +73,32 @@ entry_t *make_new_entry(char *key, char *value){
 }
 
 void entry_recursive_free(entry_t *entry){
-    if (entry == NULL){ return; }
+    if (entry == NULL){ 
+        return; 
+    }
 
-    if (entry->next){
+    if (entry->next != NULL){
         entry_recursive_free(entry->next);
     }
     free(entry->key);
     free(entry->value);
-    free(entry->next);
+    // if(entry->next != NULL){
+    //     free(entry->next);
+    // }
     free(entry);
 }
 
 void delete_list_hash_map(list_hash_map_t *map){
     int i;
+    // printf("SIZE: %d\n", map->arr_size);
     for(i = 0; i < map->arr_size; i++){
         entry_recursive_free(map->entries[i]);
     }
 
+    free(map->entries);
     free(map->rwlock);
     free(map);
+    // printf("%d\n", i);
 }
 
 void get_all_entries(entry_t **aux_entries, list_hash_map_t *map){
@@ -100,7 +107,6 @@ void get_all_entries(entry_t **aux_entries, list_hash_map_t *map){
     for (i = 0; i < map->arr_size; i++){
         // check each row of the array
         entry_t *entry = map->entries[i];  
-        
         // check each column of the array and store entry
         while(entry != NULL){
             aux_entries[j++] = entry;
@@ -124,10 +130,10 @@ void delete_list_hash_map_light(list_hash_map_t *map){
     int i;
     for(i = 0; i < map->arr_size; i++){
         entry_recursive_free_light(map->entries[i]);
-        map->entries[i] = NULL;
     }
 
     free(map->rwlock);
+    free(map->entries);
 }
 
 void list_hash_map_insert_light(list_hash_map_t *map, entry_t *entry){
@@ -136,7 +142,6 @@ void list_hash_map_insert_light(list_hash_map_t *map, entry_t *entry){
         map->entries[index] = entry;
     }
     else{
-        // printf("size: %d, index: %d\n", map->arr_size, index);
         entry_t *curr_entry = map->entries[index];
         while(curr_entry != NULL){
             if (curr_entry->next == NULL){
@@ -161,7 +166,7 @@ void list_hash_map_rebuild(list_hash_map_t *map){
     int multiplier = map->multiplier;
     int arr_size = map->arr_size;
     delete_list_hash_map_light(map);
-
+    
     int new_size = arr_size * multiplier;
     create_list_hash_map_light(map, new_size, new_size * LOAD_FACTOR, multiplier);
     map->size = size;
@@ -170,6 +175,7 @@ void list_hash_map_rebuild(list_hash_map_t *map){
     for (i = 0; i < size; i++){
         list_hash_map_insert_light(map, aux_entries[i]);
     }
+    free(aux_entries);
 }
 
 void list_hash_map_insert(list_hash_map_t *map, char *key, char *value){
@@ -195,7 +201,7 @@ void list_hash_map_insert(list_hash_map_t *map, char *key, char *value){
         while(curr_entry){
             if (strcmp(curr_entry->key, key) == 0){
                 free(curr_entry->value);
-                curr_entry->value = (char *)malloc(strlen(value) + 1);
+                curr_entry->value = (char *)malloc(strlen(key) + 1);
                 strcpy(curr_entry->value, value);
                 break;
             }
@@ -310,6 +316,7 @@ void list_hash_map_init(map_t *map, int arr_size, int multiplier){
 void list_hash_map_free(map_t *map){
     PREPARE_IMPL(map)
     delete_list_hash_map(impl->map);
+    free(map->impl);
 }
 
 void list_hash_map_print(map_t *map){

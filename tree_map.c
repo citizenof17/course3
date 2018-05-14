@@ -71,6 +71,7 @@ void tree_map_init(map_t * map){
 void tree_map_free(map_t *map){
     PREPARE_IMPL(map);
     deleteTree(impl->tree);
+    free(impl->tree);
     free(map->impl);
 }
 

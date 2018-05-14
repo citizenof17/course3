@@ -95,6 +95,7 @@ void tree_hash_map_free(map_t *map){
     int i;
     for(i = 0; i < impl->size; i++){
         deleteTree(impl->trees[i]);
+        free(impl->trees[i]);
     }
 
     free(impl->trees);

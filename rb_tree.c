@@ -334,6 +334,9 @@ void clearTree(Tree *T, Node *t) {
 
 void deleteTree(Tree *T){
   clearTree(T, T->root);
+  free(T->nil->key);
+  free(T->nil->value);
+  free(T->nil);  
 }
 
 void printTree(Node *q, long n) { ////auxiliary function for testing
