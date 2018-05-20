@@ -27,6 +27,7 @@ typedef struct list_hash_map_t {
     pthread_rwlock_t rwlock_rebuild;
 } list_hash_map_t;
 
+// creating list_hash_map
 list_hash_map_t *create_list_hash_map(int arr_size, int size_limit, int multiplier){
     list_hash_map_t *map = (list_hash_map_t *)malloc(sizeof(list_hash_map_t));
     map->size = 0;
@@ -45,6 +46,7 @@ list_hash_map_t *create_list_hash_map(int arr_size, int size_limit, int multipli
     return map;
 }
 
+// creating list_hash_map without freeing pointers to key-value pairs
 void create_list_hash_map_light(list_hash_map_t * map, int arr_size, 
                            int size_limit, int multiplier){
     map->size = 0;
@@ -60,6 +62,7 @@ void create_list_hash_map_light(list_hash_map_t * map, int arr_size,
     }
 }
 
+// creating a new key-value pair
 entry_t *make_new_entry(char *key, char *value){
     entry_t *entry = (entry_t *)malloc(sizeof(entry_t));
 
@@ -72,6 +75,7 @@ entry_t *make_new_entry(char *key, char *value){
     return entry;
 }
 
+// freeing a list in a list_hash_map
 void entry_recursive_free(entry_t *entry){
     if (entry == NULL){ 
         return; 
@@ -88,6 +92,7 @@ void entry_recursive_free(entry_t *entry){
     free(entry);
 }
 
+// deleting a list_hash_map
 void delete_list_hash_map(list_hash_map_t *map){
     int i;
     // printf("SIZE: %d\n", map->arr_size);
@@ -101,6 +106,7 @@ void delete_list_hash_map(list_hash_map_t *map){
     // printf("%d\n", i);
 }
 
+// process to eject key-value pairs from a list_hash_map
 void get_all_entries(entry_t **aux_entries, list_hash_map_t *map){
     int i;
     int j = 0; 
@@ -136,6 +142,7 @@ void delete_list_hash_map_light(list_hash_map_t *map){
     free(map->entries);
 }
 
+// insert key-value pairs using old pointers
 void list_hash_map_insert_light(list_hash_map_t *map, entry_t *entry){
     int index = get_hash(entry->key) % map->arr_size;
     if (map->entries[index] == NULL){
@@ -154,6 +161,9 @@ void list_hash_map_insert_light(list_hash_map_t *map, entry_t *entry){
     }
 }
 
+// when number of elements in a map is larger than map->arr_size > map->size_limit
+// (which is map->arr_size * map->multiplier) map should be rebuilded and
+// new map->arr_size = map->arr_size * map->multiplier (which is 2)
 void list_hash_map_rebuild(list_hash_map_t *map){
     // store all entries in map
     entry_t **aux_entries = (entry_t**)malloc(map->size * sizeof(entry_t*));
@@ -178,6 +188,7 @@ void list_hash_map_rebuild(list_hash_map_t *map){
     free(aux_entries);
 }
 
+// inserting in a list_hash_map
 void list_hash_map_insert(list_hash_map_t *map, char *key, char *value){
     // if map size is bigger than size limit then hash map 
     // should be rebuilded
@@ -217,6 +228,7 @@ void list_hash_map_insert(list_hash_map_t *map, char *key, char *value){
     pthread_rwlock_unlock(&map->rwlock_rebuild);   
 }
 
+// list_hash_map erasing
 void list_hash_map_erase(list_hash_map_t *map, char *key){
     pthread_rwlock_rdlock(&map->rwlock_rebuild);   
     int index = get_hash(key) % map->arr_size;
@@ -241,6 +253,7 @@ void list_hash_map_erase(list_hash_map_t *map, char *key){
     pthread_rwlock_unlock(&map->rwlock_rebuild);   
 }
 
+// list_hash_map finding an element
 void list_hash_map_get(list_hash_map_t *map, char *key, char *value){
     pthread_rwlock_rdlock(&map->rwlock_rebuild);   
     int index = get_hash(key) % map->arr_size;
@@ -319,6 +332,7 @@ void list_hash_map_free(map_t *map){
     free(map->impl);
 }
 
+// debugging print
 void list_hash_map_print(map_t *map){
     PREPARE_IMPL(map)
 

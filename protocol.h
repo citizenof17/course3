@@ -10,8 +10,8 @@ typedef enum {
     OP_ERASE,
     OP_SET,
     OP_GET,
-    SUCCESS,
-    FAIL,
+    SUCCESS, // not used
+    FAIL,    // not used
 } operation_t;
 
 typedef struct command_t {

@@ -35,6 +35,7 @@ static response_t set(map_t * map, char * key, char * value){
     return response;
 }
 
+// get an operation and head it to an appropriate tree
 static response_t get(map_t * map, char * key){
     PREPARE_IMPL(map)
 
@@ -66,6 +67,7 @@ static response_t rem(map_t * map, char * key){
     return response;
 }
 
+// creating a tree_hash_map
 void tree_hash_map_init(map_t * map, int size){
     assert(map);
 
@@ -89,6 +91,7 @@ void tree_hash_map_init(map_t * map, int size){
     map->rem = &rem;
 }
 
+// freeing a tree_hash_map
 void tree_hash_map_free(map_t *map){
     PREPARE_IMPL(map);
     
@@ -103,6 +106,7 @@ void tree_hash_map_free(map_t *map){
     free(map->impl);
 }
 
+// debugging printing
 void tree_hash_map_print(map_t *map){
     PREPARE_IMPL(map);
 

@@ -30,6 +30,7 @@ typedef struct client_params_t {
     config_t *config;
 } client_params_t;
 
+// parsing a port number from command line
 int parse_str(int *num, char *str){
     *num = 0;
     int len = strlen(str);
@@ -50,6 +51,7 @@ int parse_str(int *num, char *str){
     return 0;
 }
 
+// parsing a port number from command line
 int parse_config(config_t *config, int argc, char **argv){
     if (argc > 1){
         int rv = parse_str(&config->port, argv[1]);
@@ -75,6 +77,7 @@ char *gen_str(int size){
 void * run_client(void * arg){
     client_params_t client_params = *(client_params_t *)arg;
 
+    // connecting to server
     struct sockaddr_in peer;
     peer.sin_family = AF_INET;
     peer.sin_port = htons(client_params.config->port);
@@ -93,10 +96,13 @@ void * run_client(void * arg){
         perror("ошибка вызова connect");
         return ((void *)EXIT_FAILURE);        
     }
+    // if connection is successful print it
     printf("Connected %d\n", client_params.id);
 
+    // number of operations
     int n = rand() % 15;
 
+    // tell the server the number of opearions
     if ((rc = send(sock, &n, sizeof(n), 0)) <= 0) {
         perror("ошибка вызова send");
         return ((void *)EXIT_FAILURE);
@@ -115,10 +121,13 @@ void * run_client(void * arg){
 
     int i, res;
     for (i = 0; i < n; i++) {
+        // generate random key-value pair
         char *key = gen_str(STR_SIZE);
         char *value = gen_str(STR_SIZE);
+        // generate a random operation
         int oper = rand() % 3;
         
+        // exec this operation
         switch(oper) {
             case OP_ERASE:
                 res = op_erase(&sock, &rc, key, &response);
@@ -143,7 +152,9 @@ void * run_client(void * arg){
         }
     }
 
+    // disconnect
     close(sock);
+    // client has ended working
     glob--;
     return ((void *)EXIT_SUCCESS);
 }
@@ -158,6 +169,7 @@ int create_clients(config_t *config){
     // peer.sin_port = htons(config->port);
     // peer.sin_addr.s_addr = inet_addr("127.0.0.1");
 
+    // will be created $(glob) clients 
     int workers = glob;
     int i;
 
@@ -170,6 +182,7 @@ int create_clients(config_t *config){
 
         printf("Cycle %d\n", i);
 
+        // client #i started working
         int rv = pthread_create(&thread, NULL, run_client, &params);
         if (rv != 0){
             puts("RV fail");
@@ -195,7 +208,9 @@ int main(int argc, char * argv[]) {
         .port = DEFAULT_PORT,
     };
 
+    // try to get port from command line or use default
     int rv = parse_config (&config, argc, argv);
+    // creating clients
     rv = create_clients(&config);
 
     if (rv != 0){

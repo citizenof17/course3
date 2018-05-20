@@ -27,6 +27,7 @@ typedef struct hash_map_t {
     pthread_rwlock_t rwlock;
 } hash_map_t;
 
+// creating
 hash_map_t *create_hash_map(int arr_size, double load_factor, int multiplier){
     hash_map_t *map = (hash_map_t *)malloc(sizeof(hash_map_t));
     map->size = 0;
@@ -41,6 +42,7 @@ hash_map_t *create_hash_map(int arr_size, double load_factor, int multiplier){
     return map;
 }
 
+// deleting
 void delete_hash_map(hash_map_t *map){
     int i;
     for(i = 0; i < map->arr_size; i++){
@@ -52,6 +54,7 @@ void delete_hash_map(hash_map_t *map){
     free(map);
 }
 
+// inserting when key-value pairs are not from query but from old map
 void hash_map_insert_light(hash_map_t *map, char *key, char *value){
     int index = get_hash(key) % map->arr_size;
 
@@ -64,6 +67,7 @@ void hash_map_insert_light(hash_map_t *map, char *key, char *value){
     map->entries[index].value = value;        
 }
 
+// when size of a map is bigger than allowed it should be rebuilded
 void hash_map_rebuild(hash_map_t *map){
     // store all entries in map
     entry_t *aux_entries = (entry_t*)malloc(map->arr_size * sizeof(entry_t));
@@ -96,6 +100,7 @@ void hash_map_rebuild(hash_map_t *map){
     free(aux_entries);
 }
 
+// inserting 
 void hash_map_insert(hash_map_t *map, char *key, char *value){
     // if map size is bigger than size limit then hash map 
     // should be rebuilded
@@ -150,6 +155,7 @@ void hash_map_insert(hash_map_t *map, char *key, char *value){
     pthread_rwlock_unlock(&map->rwlock);
 }
 
+// erasing from a map
 void hash_map_erase(hash_map_t *map, char *key){
     pthread_rwlock_wrlock(&map->rwlock);
 
@@ -177,6 +183,7 @@ void hash_map_erase(hash_map_t *map, char *key){
     pthread_rwlock_unlock(&map->rwlock);    
 }
 
+// finding an element in a map
 void hash_map_get(hash_map_t *map, char *key, char *value){
     pthread_rwlock_rdlock(&map->rwlock);
     int index = get_hash(key) % map->arr_size;

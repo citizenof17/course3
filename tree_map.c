@@ -17,7 +17,6 @@ typedef struct {
     assert(map); assert(map->impl); \
     tree_impl_t* impl = (tree_impl_t *)map->impl;
 
-
 static response_t set(map_t * map, char * key, char * value){
     PREPARE_IMPL(map)
 
@@ -56,6 +55,7 @@ static response_t rem(map_t * map, char * key){
     return response;
 }
 
+// creating a tree_map
 void tree_map_init(map_t * map){
     assert(map);
 
@@ -68,6 +68,7 @@ void tree_map_init(map_t * map){
     map->rem = &rem;
 }
 
+// freeing a tree_map
 void tree_map_free(map_t *map){
     PREPARE_IMPL(map);
     deleteTree(impl->tree);
@@ -75,6 +76,7 @@ void tree_map_free(map_t *map){
     free(map->impl);
 }
 
+// debugging print
 void tree_map_print(map_t *map){
     PREPARE_IMPL(map);
     printTree(impl->tree->root, 3);

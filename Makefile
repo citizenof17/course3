@@ -1,4 +1,4 @@
-target=test_server.o
+target=test_mem.o
 
 all: server client clear
 server: tree_map.o tree_hash_map.o rb_tree.o hash_map2.o hash_map.o hash.o $(target) 
@@ -8,6 +8,7 @@ client: client.o operations.o
 rb_tree.o: rb_tree.c
 test_server.o: test_server.c   #local server
 server.o: server.c
+test_mem.o: test_mem.c
 client.o: client.c
 operations.o: operations.c
 tree_map.o: tree_map.c

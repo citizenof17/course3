@@ -78,6 +78,7 @@ void * client_handler(void * arg) {
     pthread_mutex_unlock (&_client_params->mutex);
 
     int32_t n;  //number of operations
+    //get the number of operations
     int rc = recv(client_params.fd, &n, sizeof (n), 0);
     printf("RECV %d\n", rc);
     if (rc <= 0) {
@@ -93,11 +94,13 @@ void * client_handler(void * arg) {
         perror("ошибка вызова send");
     }  
 
+    // getting and executing n opearions from a client
     int i;
     for (i = 0; i < n; i++) {
         handle_query(&rc, &client_params.fd, &client_params.config->map);
     }
 
+    // debugging printing for each client
     // hash_map_print(&client_params.config->map);
     tree_map_print(&client_params.config->map);
     // tree_hash_map_print(&client_params.config->map);
@@ -108,10 +111,12 @@ int run_server(config_t *config) {
     struct sockaddr_in local;
     int rc;
     char buf[1];
+    // tuning the server
     local.sin_family = AF_INET;
     local.sin_port = htons(config->port);
     local.sin_addr.s_addr = htonl(INADDR_ANY);
 
+    // server's storage
     map_t *map = &config->map;
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -126,6 +131,7 @@ int run_server(config_t *config) {
         return (EXIT_FAILURE);
     }
 
+    // setting the maximum number of clients
     if (rc = listen(sock, MAX_CLIENTS)) {
         perror("ошибка вызова listen");
         return (EXIT_FAILURE);
@@ -139,6 +145,7 @@ int run_server(config_t *config) {
     for (;;){
         struct sockaddr_in client_name;
         socklen_t client_name_len;
+        // client connected
         int fd = accept (sock, &client_name, &client_name_len);
         // int fd = accept(sock, NULL, NULL);
 
@@ -147,6 +154,7 @@ int run_server(config_t *config) {
             break;
         }
 
+        // creating a thread for each client
         pthread_t thread;
         client_params.fd = fd;
         int rv = pthread_create (&thread, NULL, client_handler, &client_params);
@@ -196,7 +204,7 @@ int main (int argc, char * argv[]) {
     // hash_map_init(&map, DEFAULT_SIZE, DEFAULT_MULTIPLIER);
     tree_map_init(&map);
     // tree_hash_map_init(&map, TREE_HASH_MAP_SIZE);
-
+    // list_hash_map_init(&map, DEFAULT_SIZE, DEFAULT_MULTIPLIER);
     config_t config = {
         .port = DEFAULT_PORT,
         .map = map,
